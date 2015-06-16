@@ -1,11 +1,11 @@
 <?php
 
-define('CS_REST_GET', 'GET');
-define('CS_REST_POST', 'POST');
-define('CS_REST_PUT', 'PUT');
-define('CS_REST_DELETE', 'DELETE');
-define('CS_REST_SOCKET_TIMEOUT', 10);
-define('CS_REST_CALL_TIMEOUT', 10);
+if (!defined('CS_REST_GET')) define('CS_REST_GET', 'GET');
+if (!defined('CS_REST_POST')) define('CS_REST_POST', 'POST');
+if (!defined('CS_REST_PUT')) define('CS_REST_PUT', 'PUT');
+if (!defined('CS_REST_DELETE')) define('CS_REST_DELETE', 'DELETE');
+if (!defined('CS_REST_SOCKET_TIMEOUT')) define('CS_REST_SOCKET_TIMEOUT', 10);
+if (!defined('CS_REST_CALL_TIMEOUT')) define('CS_REST_CALL_TIMEOUT', 10);
 
 if(!function_exists('CS_REST_TRANSPORT_get_available')) {
 function CS_REST_TRANSPORT_get_available($requires_ssl, $log) {

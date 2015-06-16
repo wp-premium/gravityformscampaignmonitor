@@ -1,8 +1,8 @@
 <?php
-define('CS_REST_LOG_VERBOSE', 1000);
-define('CS_REST_LOG_WARNING', 500);
-define('CS_REST_LOG_ERROR', 250);
-define('CS_REST_LOG_NONE', 0);
+if (!defined('CS_REST_LOG_VERBOSE')) define('CS_REST_LOG_VERBOSE', 1000);
+if (!defined('CS_REST_LOG_WARNING')) define('CS_REST_LOG_WARNING', 500);
+if (!defined('CS_REST_LOG_ERROR')) define('CS_REST_LOG_ERROR', 250);
+if (!defined('CS_REST_LOG_NONE')) define('CS_REST_LOG_NONE', 0);
 
 if(!class_exists('CS_REST_Log')) {
 class CS_REST_Log {
