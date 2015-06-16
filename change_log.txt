@@ -1,17 +1,50 @@
 ---------------------------------------------------------------------
-Version 2.5.1
-	- Updated Campaign Monitor API to version 4.0.0 to fix some conflicts with other active plugins using Campaign Monitor
-	
+Version 3.3.2
+    - Fixed an issue with the upgrade routine which caused it run even if a pre-framework version hadn't been installed.
+
 ---------------------------------------------------------------------
-Version 2.5
-	- Added the gform_campaignmonitor_field_value filter to allow add-ons to modify the value sent to the Campaign Monitor API
-	- Added entry meta to the list of available field mappings
-    - Updated Campaign Monitor API to version 2.5.2
-    - Updated "Resubscribe" UI to use a label so clicking the text also checks the corresponding checkbox
-	- Fixed strict notices for get_base_url and get_base_path
-    - Fixed issue with custom fields being overriden with blank values when customer exists
+Version 3.3.1
+    - Changed 'API Client ID' label on plugin settings page to 'Client API Key' so it's consistent with the wording used by Campaign Monitor.
+
+---------------------------------------------------------------------
+Version 3.3
+    - Added support for the middle name input when preparing Name field values.
+    - Updated logging statements.
+    - Fixed a low severity security vulnerability in the admin area which could be exploited by authenticated users with form administration permissions.
+	- Fixed issues with multi-select fields not sending data in the expected format
+	- Fixed issue where client list was displayed even when API Client ID was entered.
+
+---------------------------------------------------------------------
+Version 3.2
+    - Added gform_campaignmonitor_override_subscriber filter to allow users to modify or add subscriber parameters sent to the Campaign Monitor API.
+	- Fixed issue where email address mapping was not being required
+	- Fixed issue during upgrade that prevented data from being transfered to new structure under certain situations.
+
+---------------------------------------------------------------------
+Version 3.1
+	- Fixed issue during upgrade that prevented data from being transfered to new structure under certain situations.
+
+---------------------------------------------------------------------
+Version 3.0
+    - Added Add-on Framework integration.
+	- Added function gf_campaignmonitor to easily get a Campaign Monitor instance.
+	- Added missing gform_campaignmonitor_override_blank_custom_fields hook.
+    - Added gform_campaignmonitor_field_value filter to allow add-ons to modify values sent to the Campaign Monitor API.
+	- Added text domain/path to header.
+    - Updated Campaign Monitor API to version 4.0.0 to fix some conflicts with other active plugins using Campaign Monitor.
+	- Updated required version of Gravity Forms to 1.8.17.
+	- Updated POT file.
+    - Fixed notices.
+
+---------------------------------------------------------------------
+Version 2.3
 	- Fixed bug that threw a javascript error in TruncateMiddle function when text was undefined (this could happen in some instances when a label was not specified for a field)
 	- Fixed headers already sent issue by removing blank lines at the end of files
+
+---------------------------------------------------------------------
+Version 2.2
+    - Updated Campaign Monitor API to version 2.5.2
+    - Updated "Resubscribe" UI to use a label so clicking the text also checks the corresponding checkbox
 
 ---------------------------------------------------------------------
 Version 2.1

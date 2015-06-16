@@ -4,12 +4,12 @@ require_once dirname(__FILE__).'/serialisation.php';
 require_once dirname(__FILE__).'/transport.php';
 require_once dirname(__FILE__).'/log.php';
 
-define('CS_REST_WRAPPER_VERSION', '4.0.0');
-define('CS_HOST', 'api.createsend.com');
-define('CS_OAUTH_BASE_URI', 'https://'.CS_HOST.'/oauth');
-define('CS_OAUTH_TOKEN_URI', CS_OAUTH_BASE_URI.'/token');
-define('CS_REST_WEBHOOK_FORMAT_JSON', 'json');
-define('CS_REST_WEBHOOK_FORMAT_XML', 'xml');
+if (!defined('CS_REST_WRAPPER_VERSION')) define('CS_REST_WRAPPER_VERSION', '4.0.0');
+if (!defined('CS_HOST')) define('CS_HOST', 'api.createsend.com');
+if (!defined('CS_OAUTH_BASE_URI')) define('CS_OAUTH_BASE_URI', 'https://'.CS_HOST.'/oauth');
+if (!defined('CS_OAUTH_TOKEN_URI')) define('CS_OAUTH_TOKEN_URI', CS_OAUTH_BASE_URI.'/token');
+if (!defined('CS_REST_WEBHOOK_FORMAT_JSON')) define('CS_REST_WEBHOOK_FORMAT_JSON', 'json');
+if (!defined('CS_REST_WEBHOOK_FORMAT_XML')) define('CS_REST_WEBHOOK_FORMAT_XML', 'xml');
 
 /**
  * A general result object returned from all Campaign Monitor API calls.
