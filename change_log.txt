@@ -1,10 +1,19 @@
 ---------------------------------------------------------------------
-Version 3.3.2
-    - Fixed an issue with the upgrade routine which caused it run even if a pre-framework version hadn't been installed.
+Version 3.4.1
+    - Fixed a fatal error with PHP < 5.5.
 
 ---------------------------------------------------------------------
-Version 3.3.1
-    - Changed 'API Client ID' label on plugin settings page to 'Client API Key' so it's consistent with the wording used by Campaign Monitor.
+Version 3.4
+    - Added form specific version of the gform_campaignmonitor_override_blank_custom_fields filter.
+    - Added form specific version of the gform_campaignmonitor_override_subscriber filter.
+    - Added form and field specific versions of the gform_campaignmonitor_field_value filter.
+    - Updated minimum Gravity Forms version to 1.9.3.
+    - Updated 'Opt-In Condition' setting label to 'Conditional Logic'.
+    - Updated feed processing to use get_field_value() when retrieving mapped field values, enabling support for GF_Field::get_value_export with GF 1.9.12.4 and later.
+    - Updated 'API Client ID' label on plugin settings page to 'Client API Key' so it's consistent with the wording used by Campaign Monitor.
+    - Fixed an issue with the feed list page if the API key not valid.
+    - Fixed a PHP notice if no clients are configured in the Campaign Monitor account.
+    - Fixed an issue with the upgrade routine which caused it run even if a pre-framework version hadn't been installed.
 
 ---------------------------------------------------------------------
 Version 3.3
