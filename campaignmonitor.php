@@ -3,7 +3,7 @@
 Plugin Name: Gravity Forms Campaign Monitor Add-On
 Plugin URI: http://www.gravityforms.com
 Description: Integrates Gravity Forms with Campaign Monitor allowing form submissions to be automatically sent to your Campaign Monitor account
-Version: 3.3.2
+Version: 3.4.1
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 Text Domain: gravityformscampaignmonitor
@@ -27,7 +27,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-define( 'GF_CAMPAIGN_MONITOR_VERSION', '3.3.2' );
+define( 'GF_CAMPAIGN_MONITOR_VERSION', '3.4.1' );
 
 add_action( 'gform_loaded', array( 'GF_CampaignMonitor_Bootstrap', 'load' ), 5 );
 
