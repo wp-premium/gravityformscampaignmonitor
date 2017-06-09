@@ -2,8 +2,8 @@
 /*
 Plugin Name: Gravity Forms Campaign Monitor Add-On
 Plugin URI: http://www.gravityforms.com
-Description: Integrates Gravity Forms with Campaign Monitor allowing form submissions to be automatically sent to your Campaign Monitor account
-Version: 3.4.1
+Description: Integrates Gravity Forms with Campaign Monitor, allowing form submissions to be automatically sent to your Campaign Monitor account
+Version: 3.5
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 Text Domain: gravityformscampaignmonitor
@@ -27,12 +27,24 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-define( 'GF_CAMPAIGN_MONITOR_VERSION', '3.4.1' );
+define( 'GF_CAMPAIGN_MONITOR_VERSION', '3.5' );
 
+// If Gravity Forms is loaded, bootstrap the Campaign Monitor Add-On.
 add_action( 'gform_loaded', array( 'GF_CampaignMonitor_Bootstrap', 'load' ), 5 );
 
+/**
+ * Class GF_CampaignMonitor_Bootstrap
+ *
+ * Handles the loading of the Campaign Monitor Add-On and registers with the Add-On framework.
+ */
 class GF_CampaignMonitor_Bootstrap {
 
+	/**
+	 * If the Feed Add-On Framework exists, Campaign Monitor Add-On is loaded.
+	 *
+	 * @access public
+	 * @static
+	 */
 	public static function load() {
 
 		if ( ! method_exists( 'GFForms', 'include_feed_addon_framework' ) ) {
@@ -42,9 +54,18 @@ class GF_CampaignMonitor_Bootstrap {
 		require_once( 'class-gf-campaignmonitor.php' );
 
 		GFAddOn::register( 'GFCampaignMonitor' );
+
 	}
+
 }
 
+/**
+ * Returns an instance of the GFCampaignMonitor class
+ *
+ * @see    GFCampaignMonitor::get_instance()
+ *
+ * @return object GFCampaignMonitor
+ */
 function gf_campaignmonitor() {
 	return GFCampaignMonitor::get_instance();
 }

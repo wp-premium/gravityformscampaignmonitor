@@ -2,40 +2,624 @@
 
 GFForms::include_feed_addon_framework();
 
+/**
+ * Gravity Forms Campaign Monitor Add-On.
+ *
+ * @since     Unknown
+ * @package   GravityForms
+ * @author    Rocketgenius
+ * @copyright Copyright (c) 2017, Rocketgenius
+ */
 class GFCampaignMonitor extends GFFeedAddOn {
 
-	protected $_version = GF_CAMPAIGN_MONITOR_VERSION;
-	protected $_min_gravityforms_version = '1.9.3';
-	protected $_slug = 'gravityformscampaignmonitor';
-	protected $_path = 'gravityformscampaignmonitor/campaignmonitor.php';
-	protected $_full_path = __FILE__;
-	protected $_url = 'http://www.gravityforms.com';
-	protected $_title = 'Campaign Monitor Add-On';
-	protected $_short_title = 'Campaign Monitor';
-
-	// Members plugin integration
-	protected $_capabilities = array( 'gravityforms_campaignmonitor', 'gravityforms_campaignmonitor_uninstall' );
-
-	// Permissions
-	protected $_capabilities_settings_page = 'gravityforms_campaignmonitor';
-	protected $_capabilities_form_settings = 'gravityforms_campaignmonitor';
-	protected $_capabilities_uninstall = 'gravityforms_campaignmonitor_uninstall';
-	protected $_enable_rg_autoupgrade = true;
-
+	/**
+	 * Contains an instance of this class, if available.
+	 *
+	 * @since  Unknown
+	 * @access private
+	 * @var    object $_instance If available, contains an instance of this class.
+	 */
 	private static $_instance = null;
 
 	/**
-	 * Get an instance of this class.
+	 * Defines the version of the Campaign Monitor Add-On.
 	 *
-	 * @return GFCampaignMonitor
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_version Contains the version, defined from campaignmonitor.php
+	 */
+	protected $_version = GF_CAMPAIGN_MONITOR_VERSION;
+
+	/**
+	 * Defines the minimum Gravity Forms version required.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_min_gravityforms_version The minimum version required.
+	 */
+	protected $_min_gravityforms_version = '1.9.3';
+
+	/**
+	 * Defines the plugin slug.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_slug The slug used for this plugin.
+	 */
+	protected $_slug = 'gravityformscampaignmonitor';
+
+	/**
+	 * Defines the main plugin file.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_path The path to the main plugin file, relative to the plugins folder.
+	 */
+	protected $_path = 'gravityformscampaignmonitor/campaignmonitor.php';
+
+	/**
+	 * Defines the full path to this class file.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_full_path The full path.
+	 */
+	protected $_full_path = __FILE__;
+
+	/**
+	 * Defines the URL where this Add-On can be found.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string The URL of the Add-On.
+	 */
+	protected $_url = 'http://www.gravityforms.com';
+
+	/**
+	 * Defines the title of this Add-On.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_title The title of the Add-On.
+	 */
+	protected $_title = 'Campaign Monitor Add-On';
+
+	/**
+	 * Defines the short title of the Add-On.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_short_title The short title.
+	 */
+	protected $_short_title = 'Campaign Monitor';
+
+	/**
+	 * Defines if Add-On should use Gravity Forms servers for update data.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    bool
+	 */
+	protected $_enable_rg_autoupgrade = true;
+
+	/**
+	 * Defines the capability needed to access the Add-On settings page.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_capabilities_settings_page The capability needed to access the Add-On settings page.
+	 */
+	protected $_capabilities_settings_page = 'gravityforms_campaignmonitor';
+
+	/**
+	 * Defines the capability needed to access the Add-On form settings page.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_capabilities_form_settings The capability needed to access the Add-On form settings page.
+	 */
+	protected $_capabilities_form_settings = 'gravityforms_campaignmonitor';
+
+	/**
+	 * Defines the capability needed to uninstall the Add-On.
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    string $_capabilities_uninstall The capability needed to uninstall the Add-On.
+	 */
+	protected $_capabilities_uninstall = 'gravityforms_campaignmonitor_uninstall';
+
+	/**
+	 * Defines the capabilities needed for the Campaign Monitor Add-On
+	 *
+	 * @since  Unknown
+	 * @access protected
+	 * @var    array $_capabilities The capabilities needed for the Add-On
+	 */
+	protected $_capabilities = array( 'gravityforms_campaignmonitor', 'gravityforms_campaignmonitor_uninstall' );
+
+	/**
+	 * Contains an instance of the Campaign Monitor API library, if available.
+	 *
+	 * @since  3.5
+	 * @access protected
+	 * @var    object $api If available, contains an instance of the Campaign Monitor API library.
+	 */
+	public $api = null;
+
+	/**
+	 * Get instance of this class.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 * @static
+	 *
+	 * @return $_instance
 	 */
 	public static function get_instance() {
-		if ( self::$_instance == null ) {
-			self::$_instance = new GFCampaignMonitor();
+
+		if ( null === self::$_instance ) {
+			self::$_instance = new self;
 		}
 
 		return self::$_instance;
+
 	}
+
+	/**
+	 * Register needed hooks for Add-On.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 */
+	public function init() {
+
+		parent::init();
+
+		$this->add_delayed_payment_support(
+			array(
+				'option_label' => esc_html__( 'Subscribe user to Campaign Monitor only when payment is received.', 'gravityformscampaignmonitor' )
+			)
+		);
+
+	}
+
+
+
+
+
+	// # PLUGIN SETTINGS -----------------------------------------------------------------------------------------------
+
+	/**
+	 * Prepare plugin settings fields.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @uses GFCampaignMonitor::get_clients_as_choices()
+	 *
+	 * @return array
+	 */
+	public function plugin_settings_fields() {
+
+		return array(
+			array(
+				'title'       => esc_html__( 'Campaign Monitor Account Information', 'gravityformscampaignmonitor' ),
+				'description' => sprintf(
+					'<p>%s</p>',
+					sprintf(
+						esc_html__( 'Campaign Monitor is an email marketing software for designers and their clients. Use Gravity Forms to collect customer information and automatically add it to your client\'s Campaign Monitor subscription list. If you don\'t have a Campaign Monitor account, you can %1$ssign up for one here.%2$s', 'gravityformscampaignmonitor' ),
+						'<a href="http://www.campaignmonitor.com" target="_blank">',
+						'</a>'
+					)
+				),
+				'fields'      => array(
+					array(
+						'name'              => 'apiKey',
+						'label'             => esc_html__( 'API Key', 'gravityformscampaignmonitor' ),
+						'type'              => 'text',
+						'class'             => 'medium',
+						'feedback_callback' => array( $this, 'initialize_api' ),
+						'description'       => sprintf(
+							'<small>%s</small>',
+							esc_html__( "You can find your unique API key by clicking on the 'Account Settings' link at the top of your Campaign Monitor screen. You can also enter your client API key here.", 'gravityformscampaignmonitor' )
+						),
+					),
+				)
+			),
+		);
+
+	}
+
+
+
+
+
+	// # FEED SETTINGS -------------------------------------------------------------------------------------------------
+
+	/**
+	 * Configures the settings which should be rendered on the feed edit page.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @uses GFCampaignMonitor::get_clients_as_choices()
+	 * @uses GFCampaignMonitor::get_custom_fields_as_field_map()
+	 * @uses GFCampaignMonitor::get_lists_as_choices()
+	 * @uses GFCampaignMonitor::is_clients_hidden()
+	 *
+	 * @return array The feed settings.
+	 */
+	public function feed_settings_fields() {
+
+		return array(
+			array(
+				'title'  => esc_html__( 'Campaign Monitor Feed', 'gravityformscampaignmonitor' ),
+				'fields' => array(
+					array(
+						'name'     => 'feedName',
+						'label'    => esc_html__( 'Name', 'gravityformscampaignmonitor' ),
+						'type'     => 'text',
+						'required' => true,
+						'class'    => 'medium',
+						'tooltip'  => sprintf(
+							'<h6>%s</h6>%s',
+							esc_html__( 'Name', 'gravityformscampaignmonitor' ),
+							esc_html__( 'Enter a feed name to uniquely identify this setup.', 'gravityformscampaignmonitor' )
+						),
+					),
+					array(
+						'name'     => 'client',
+						'label'    => esc_html__( 'Client', 'gravityformscampaignmonitor' ),
+						'type'     => 'select',
+						'onchange' => 'jQuery(this).parents("form").submit();',
+						'hidden'   => $this->is_clients_hidden(),
+						'choices'  => $this->get_clients_as_choices(),
+						'tooltip'  => sprintf(
+							'<h6>%s</h6>%s',
+							esc_html__( 'Client', 'gravityformscampaignmonitor' ),
+							esc_html__( 'Select the Campaign Monitor client you would like to add your contacts to.', 'gravityformscampaignmonitor' )
+						),
+					),
+					array(
+						'name'       => 'contactList',
+						'label'      => esc_html__( 'Contact List', 'gravityformscampaignmonitor' ),
+						'type'       => 'select',
+						'required'   => true,
+						'choices'    => $this->get_lists_as_choices(),
+						'onchange'   => 'jQuery(this).parents("form").submit();',
+						'dependency' => array( $this, 'has_selected_client' ),
+						'no_choices' => sprintf(
+							esc_html__( 'No clients found. Please configure one or more clients in your %sCampaign Monitor%s account.', 'gravityformscampaignmonitor' ),
+							'<a href="http://www.campaignmonitor.com" target="_blank">',
+							'</a>'
+						),
+						'tooltip'    => sprintf(
+							'<h6>%</h6>%s',
+							esc_html__( 'Contact List', 'gravityformscampaignmonitor' ),
+							esc_html__( 'Select the Campaign Monitor list you would like to add your contacts to.', 'gravityformscampaignmonitor' )
+						),
+					),
+					array(
+						'name'       => 'listFields',
+						'label'      => esc_html__( 'Map Fields', 'gravityformscampaignmonitor' ),
+						'type'       => 'field_map',
+						'dependency' => 'contactList',
+						'field_map'  => $this->get_custom_fields_as_field_map(),
+						'tooltip'    => sprintf(
+							'<h6>%s</h6>%s',
+							esc_html__( 'Map Fields', 'gravityformscampaignmonitor' ),
+							esc_html__( 'Associate your Campaign Monitor custom fields to the appropriate Gravity Form fields by selecting the appropriate form field from the list.', 'gravityformscampaignmonitor' )
+						),
+					),
+					array(
+						'name'       => 'optin',
+						'label'      => esc_html__( 'Conditional Logic', 'gravityformscampaignmonitor' ),
+						'type'       => 'feed_condition',
+						'dependency' => 'contactList',
+						'tooltip'    => sprintf(
+							'<h6>%s</h6>%s',
+							esc_html__( 'Conditional Logic', 'gravityformscampaignmonitor' ),
+							esc_html__( 'When conditional logic is enabled, form submissions will only be exported to Campaign Monitor when the condition is met. When disabled all form submissions will be exported.', 'gravityformscampaignmonitor' )
+						),
+					),
+					array(
+						'name'       => 'resubscribe',
+						'label'      => esc_html__( 'Options', 'gravityformscampaignmonitor' ),
+						'type'       => 'option_resubscribe',
+						'dependency' => 'contactList',
+						'onclick'    => "if(this.checked){jQuery('#campaignmonitor_resubscribe_warning').slideDown();} else{jQuery('#campaignmonitor_resubscribe_warning').slideUp();}",
+					),
+					array(
+						'type'       => 'save',
+						'dependency' => 'contactList',
+					),
+				)
+			),
+		);
+
+	}
+
+	/**
+	 * Check if the clients setting should be displayed.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @uses GFCampaignMonitor::has_multiple_clients()
+	 *
+	 * @return bool
+	 */
+	public function is_clients_hidden() {
+
+		return ! $this->has_multiple_clients();
+
+	}
+
+	/**
+	 * Prepare Campaign Monitor custom fields as a field map.
+	 *
+	 * @since  3.5
+	 * @access public
+	 *
+	 * @uses GFAddOn::get_setting()
+	 * @uses GFAddOn::log_error()
+	 * @uses GFCampaignMonitor::initialize_api()
+	 * @uses GF_CampaignMonitor_API::get_custom_fields()
+	 *
+	 * @return array
+	 */
+	public function get_custom_fields_as_field_map() {
+
+		// Initialize field map.
+		$field_map = array(
+			array(
+				'name'     => 'email',
+				'label'    => esc_html__( 'Email Address', 'gravityformscampaignmonitor' ),
+				'required' => true,
+			),
+			array(
+				'name'     => 'fullname',
+				'label'    => esc_html__( 'Full Name', 'gravityformscampaignmonitor' ),
+			),
+		);
+
+		// If API is not initialized, return.
+		if ( ! $this->initialize_api() ) {
+			return $field_map;
+		}
+
+		// Get the list ID.
+		$list_id = $this->get_setting( 'contactList' );
+
+		try {
+
+			// Get custom fields.
+			$custom_fields = $this->api->get_custom_fields( $list_id );
+
+		} catch ( \Exception $e ) {
+
+			// Log that we could not retrieve custom fields.
+			$this->log_error( __METHOD__ . '(): Unable to retrieve custom fields; ' . $e->getMessage() );
+
+			return $field_map;
+
+		}
+
+		// Loop through custom fields.
+		foreach ( $custom_fields as $custom_field ) {
+
+			// Prepare custom field key.
+			$field_key = str_replace( array( '[', ']' ), '', $custom_field['Key'] );
+
+			// Add custom field to field map.
+			$field_map[] = array(
+				'name'  => $field_key,
+				'label' => esc_html( $custom_field['FieldName'] ),
+			);
+
+		}
+
+		return $field_map;
+
+	}
+
+	/**
+	 * Define the markup for the option_resubscribe type field.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @param array     $field The field properties.
+	 * @param bool|true $echo Should the setting markup be echoed.
+	 *
+	 * @uses GFAddOn::get_setting()
+	 * @uses GFAddOn::settings_checkbox()
+	 *
+	 * @return string|void
+	 */
+	public function settings_option_resubscribe( $field, $echo = true ) {
+
+		// Define field type.
+		$field['type'] = 'checkbox';
+
+		// Prepare field choices.
+		$field['choices'] = array(
+			array(
+				'label' => esc_html__( 'Resubscribe', 'gravityformscampaignmonitor' ),
+				'name'  => 'resubscribe',
+			),
+		);
+
+		// Display checkbox field.
+		$html = $this->settings_checkbox( $field, false );
+
+		// Prepare field tooltip.
+		$tooltip_content = sprintf(
+			'<h6>%s</h6>%s',
+			esc_html__( 'Resubscribe', 'gravityformscampaignmonitor' ),
+			esc_html__( 'When this option is enabled, if the subscriber is in an inactive state or has previously been unsubscribed, they will be re-added to the active list. Therefore, this option should be used with caution and only when appropriate.', 'gravityformscampaignmonitor' )
+		);
+		
+		// Display tooltip.
+		$html = str_replace( '</div>', '&nbsp' . gform_tooltip( $tooltip_content, '', true ) . '</div>', $html );
+
+		// Display warning.
+		$html .= sprintf(
+			'<small><span id="campaignmonitor_resubscribe_warning" style="%s">%s</span></small>',
+			$this->get_setting( 'resubscribe' ) ? '' : 'display:none',
+			esc_html__( 'This option will re-subscribe users that have been unsubscribed. Use with caution and only when appropriate.', 'gravityformscampaignmonitor' )
+		);
+
+		if ( $echo ) {
+			echo $html;
+		}
+
+		return $html;
+
+	}
+
+
+
+
+
+	// # FEED LIST -------------------------------------------------------------------------------------------------
+
+	/**
+	 * Prevent feeds being listed or created if the api key or client id aren't valid.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @uses GFCampaignMonitor::initialize_api()
+	 *
+	 * @return bool
+	 */
+	public function can_create_feed() {
+
+		return $this->initialize_api();
+
+	}
+
+
+	/**
+	 * Configures which columns should be displayed on the feed list page.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @return array
+	 */
+	public function feed_list_columns() {
+
+		return array(
+			'feedName'    => esc_html__( 'Name', 'gravityformscampaignmonitor' ),
+			'client'      => esc_html__( 'Campaign Monitor Client', 'gravityformscampaignmonitor' ),
+			'contactList' => esc_html__( 'Campaign Monitor List', 'gravityformscampaignmonitor' )
+		);
+
+	}
+
+	/**
+	 * Returns the value to be displayed in the client column.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @param array $feed The feed being included in the feed list.
+	 *
+	 * @uses GFAddOn::log_error()
+	 * @uses GFAddOn::get_plugin_settings()
+	 * @uses GFAddOn::get_setting()
+	 * @uses GFCampaignMonitor::initialize_api()
+	 * @uses GF_CampaignMonitor_API::get_client()
+	 *
+	 * @return string
+	 */
+	public function get_column_value_client( $feed ) {
+
+		// If we cannot initialize the API, return client ID.
+		if ( ! $this->initialize_api() ) {
+			return $feed['meta']['client'];
+		}
+
+		// Set client ID to feed client ID.
+		if ( rgars( $feed, 'meta/client' ) ) {
+
+			$client_id = $feed['meta']['client'];
+
+		} else {
+
+			// Use default client.
+			$client_id = $this->get_default_client();
+
+		}
+
+		try {
+
+			// Get client.
+			$client = $this->api->get_client( $client_id );
+
+			return esc_html( $client['BasicDetails']['CompanyName'] );
+
+		} catch ( \Exception $e ) {
+
+			// Log that we could not get the client.
+			$this->log_error( __METHOD__ . '(): Unable to get client; ' . $e->getMessage() );
+
+			return sprintf(
+				'<strong>%s</strong>',
+				esc_html__( 'Client could not be found.', 'gravityformscampaignmonitor' )
+			);
+
+		}
+
+	}
+
+	/**
+	 * Returns the value to be displayed in the contactList column.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @param array $feed The feed being included in the feed list.
+	 *
+	 * @uses GFAddOn::log_error()
+	 * @uses GFCampaignMonitor::initialize_api()
+	 * @uses GF_CampaignMonitor_API::get_list()
+	 *
+	 * @return string
+	 */
+	public function get_column_value_contactList( $feed ) {
+
+		// If we cannot initialize the API, return list ID.
+		if ( ! $this->initialize_api() || ! rgars( $feed, 'meta/contactList' ) ) {
+			return rgars( $feed, 'meta/contactList' );
+		}
+
+		try {
+
+			// Get list.
+			$list = $this->api->get_list( $feed['meta']['contactList'] );
+
+			return esc_html( $list['Title'] );
+
+		} catch ( \Exception $e ) {
+
+			// Log that we could not get the list.
+			$this->log_error( __METHOD__ . '(): Unable to get list; ' . $e->getMessage() );
+
+			return sprintf(
+				'<strong>%s</strong>',
+				esc_html__( 'List could not be found.', 'gravityformscampaignmonitor' )
+			);
+
+		}
+
+	}
+
+
+
 
 
 	// # FEED PROCESSING -----------------------------------------------------------------------------------------------
@@ -43,71 +627,132 @@ class GFCampaignMonitor extends GFFeedAddOn {
 	/**
 	 * Initiate processing the feed.
 	 *
-	 * @param array $feed The feed object to be processed.
-	 * @param array $entry The entry object currently being processed.
-	 * @param array $form The form object currently being processed.
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @param  array $feed  The feed object to be processed.
+	 * @param  array $entry The entry object currently being processed.
+	 * @param  array $form  The form object currently being processed.
+	 *
+	 * @uses GFAddOn::get_field_map_fields()
+	 * @uses GFAddOn::get_field_value()
+	 * @uses GFAddOn::log_debug()
+	 * @uses GFCampaignMonitor::initialize_api()
+	 * @uses GF_CampaignMonitor_API::add_subscriber()
+	 * @uses GFCommon::is_invalid_or_empty_email()
+	 * @uses GFFeedAddOn::add_feed_error()
 	 */
 	public function process_feed( $feed, $entry, $form ) {
 
-		$this->export_feed( $entry, $form, $feed );
+		// If API cannot be initialized, exit.
+		if ( ! $this->initialize_api() ) {
 
-	}
+			// Log that API could not be initialized.
+			$this->add_feed_error( esc_html__( 'User could not be subscribed because API could not be initialized.', 'gravityformscampaignmonitor' ), $feed, $entry, $form );
 
-	/**
-	 * Process the feed, subscribe the user to the list.
-	 *
-	 * @param array $entry The entry object currently being processed.
-	 * @param array $form The form object currently being processed.
-	 * @param array $feed The feed object currently being processed.
-	 */
-	public function export_feed( $entry, $form, $feed ) {
+			return;
 
-		$resubscribe = $feed['meta']['resubscribe'] ? true : false;
-		$email       = $this->get_field_value( $form, $entry, $feed['meta']['listFields_email'] );
-		$name        = '';
-		if ( ! empty( $feed['meta']['listFields_fullname'] ) ) {
-			$name = $this->get_field_value( $form, $entry, $feed['meta']['listFields_fullname'] );
 		}
 
-		$merge_vars = array();
-		$field_maps = $this->get_field_map_fields( $feed, 'listFields' );
-		foreach ( $field_maps as $var_key => $field_id ) {
-			if ( ! in_array( $var_key, array( 'email', 'fullname' ) ) ) {
-				$values = $this->get_field_value( $form, $entry, $field_id );
-
-				if ( ! is_array( $values ) ) {
-					$values = array( $values );
-				}
-
-				foreach ( $values as $value ) {
-					$merge_vars[] = array(
-						'Key'   => $var_key,
-						'Value' => $value,
-					);
-				}
-			}
-		}
-
-		$override_custom_fields = gf_apply_filters( 'gform_campaignmonitor_override_blank_custom_fields', $form['id'], false, $entry, $form, $feed );
-		if ( ! $override_custom_fields ) {
-			$merge_vars = $this->remove_blank_custom_fields( $merge_vars );
-		}
-
+		// Initialize subscriber object.
 		$subscriber = array(
-			'EmailAddress' => $email,
-			'Name'         => $name,
-			'CustomFields' => $merge_vars,
-			'Resubscribe'  => $resubscribe,
+			'EmailAddress' => $this->get_field_value( $form, $entry, $feed['meta']['listFields_email'] ),
+			'Name'         => $this->get_field_value( $form, $entry, rgars( $feed, 'meta/listFields_fullname' ) ),
+			'CustomFields' => array(),
+			'Resubscribe'  => rgars( $feed, 'meta/resubscribe' ) ? true : false,
 		);
+
+		// If provided email address is empty or invalid, exit.
+		if ( GFCommon::is_invalid_or_empty_email( $subscriber['EmailAddress'] ) ) {
+
+			// Log that subscriber could not be added.
+			$this->add_feed_error( esc_html__( 'User could not be subscribed because provided email address was empty or invalid.', 'gravityformscampaignmonitor' ), $feed, $entry, $form );
+
+			return;
+
+		}
+
+		// Get field map.
+		$field_map = $this->get_field_map_fields( $feed, 'listFields' );
+
+		/**
+		 * Modify how Campaign Monitor Add-On handles blank custom fields.
+		 * The default behaviour is to remove custom fields which don't have a value from the CustomFields array so they aren't sent to Campaign Monitor.
+		 *
+		 * @since  Unknown
+		 *
+		 * @param bool  $override The default is false.
+		 * @param array $entry    The Entry which is currently being processed.
+		 * @param array $form     The Form which is currently being processed.
+		 * @param array $feed     The Feed which is currently being processed.
+		 */
+		$override_custom_fields = gf_apply_filters( array( 'gform_campaignmonitor_override_blank_custom_fields', $form['id'], $feed['id'] ), false, $entry, $form, $feed );
+
+		// Loop through field map.
+		foreach ( $field_map as $key => $field_id ) {
+
+			// If this is an email or name field, skip it.
+			if ( in_array( $key, array( 'email', 'fullname' ) ) ) {
+				continue;
+			}
+
+			// Get field value.
+			$field_values = $this->get_field_value( $form, $entry, $field_id );
+
+			// Convert field value to array.
+			if ( ! is_array( $field_values ) ) {
+				$field_values = array( $field_values );
+			}
+
+			// Loop through values and add to subscriber custom fields.
+			foreach ( $field_values as $field_value ) {
+
+				// If we are not overriding custom fields and the field value is blank, skip it.
+				if ( ! $override_custom_fields && rgblank( $field_value ) ) {
+					continue;
+				}
+
+				// Add custom field.
+				$subscriber['CustomFields'][] = array(
+					'Key'   => $key,
+					'Value' => $field_value,
+				);
+
+			}
+
+		}
+
+		/**
+		 * Modify the subscriber parameters before they are sent to Campaign Monitor.
+		 *
+		 * @since  Unknown
+		 *
+		 * @param array $subscriber An associative array containing all the parameters to be passed to Campaign Monitor.
+		 * @param array $entry      The Entry which is currently being processed.
+		 * @param array $form       The Form which is currently being processed.
+		 * @param array $feed       The Feed which is currently being processed.
+		 */
 		$subscriber = gf_apply_filters( 'gform_campaignmonitor_override_subscriber', $form['id'], $subscriber, $entry, $form, $feed );
 
-		$this->include_api();
-		$api = new CS_REST_Subscribers( $feed['meta']['contactList'], $this->get_key() );
-		$this->log_debug( __METHOD__ . '(): Adding subscriber => ' . print_r( $subscriber, 1 ) );
+		try {
 
-		$result = $api->add( $subscriber );
+			// Subscribe user.
+			$this->api->add_subscriber( $subscriber, rgars( $feed, 'meta/contactList' ) );
 
-		$this->log_debug( __METHOD__ . '(): Result => ' . print_r( $result, true ) );
+			// Log that user was subscribed.
+			$this->log_debug( __METHOD__ . '(): User was subscribed to list.' );
+
+			return;
+
+		} catch ( \Exception $e ) {
+
+			// Log that user could not be subscribed.
+			$this->add_feed_error( sprintf( esc_html__( 'User could not be subscribed: %s', 'gravityformscampaignmonitor' ), $e->getMessage() ), $feed, $entry, $form );
+
+			return;
+
+		}
+
 	}
 
 	/**
@@ -120,6 +765,7 @@ class GFCampaignMonitor extends GFFeedAddOn {
 	 * @return array
 	 */
 	public function get_field_value( $form, $entry, $field_id ) {
+
 		$field_value = '';
 
 		switch ( strtolower( $field_id ) ) {
@@ -162,6 +808,7 @@ class GFCampaignMonitor extends GFFeedAddOn {
 
 					} elseif ( $is_integer && $input_type == 'checkbox' ) {
 
+						$field_value = array();
 						foreach ( $field->inputs as $input ) {
 							$index         = (string) $input['id'];
 							$field_value[] = $this->maybe_override_field_value( rgar( $entry, $index ), $form, $entry, $index );
@@ -201,6 +848,7 @@ class GFCampaignMonitor extends GFFeedAddOn {
 		}
 
 		return $field_value;
+
 	}
 
 	/**
@@ -219,806 +867,359 @@ class GFCampaignMonitor extends GFFeedAddOn {
 			$form['id'],
 			$field_id
 		), $field_value, $form['id'], $field_id, $entry );
+
 	}
+
+
+
+
+
+	// # HELPER METHODS ------------------------------------------------------------------------------------------------
 
 	/**
-	 * Remove any custom fields with blank values.
+	 * Initializes Campaign Monitor API if credentials are valid.
 	 *
-	 * @param array $merge_vars The custom fields and their mapped values.
+	 * @since  3.5
+	 * @access public
 	 *
-	 * @return array
+	 * @uses GFAddOn::get_plugin_settings()
+	 * @uses GFAddOn::log_debug()
+	 * @uses GFAddOn::log_error()
+	 * @uses GF_CampaignMonitor_API::auth_test()
+	 *
+	 * @return bool|null
 	 */
-	private static function remove_blank_custom_fields( $merge_vars ) {
-		$i     = 0;
-		$count = count( $merge_vars );
+	public function initialize_api() {
 
-		for ( $i = 0; $i < $count; $i ++ ) {
-			if ( rgblank( $merge_vars[ $i ]['Value'] ) ) {
-				unset( $merge_vars[ $i ] );
-			}
-		}
-		//resort the array because items could have been removed, this will give an error from Campaign Monitor if the keys are not in numeric sequence
-		sort( $merge_vars );
-
-		return $merge_vars;
-	}
-
-
-	// # ADMIN FUNCTIONS -----------------------------------------------------------------------------------------------
-
-	/**
-	 * Plugin starting point. Handles hooks, loading of language files and PayPal delayed payment support.
-	 */
-	public function init() {
-
-		parent::init();
-
-		$this->add_delayed_payment_support( array(
-			'option_label' => esc_html__( 'Subscribe user to Campaign Monitor only when payment is received.', 'gravityformscampaignmonitor' )
-		) );
-
-	}
-
-	// ------- Plugin settings -------
-	public function plugin_settings_fields() {
-		return array(
-			array(
-				'title'       => esc_html__( 'Campaign Monitor Account Information', 'gravityformscampaignmonitor' ),
-				'description' => sprintf( esc_html__( 'Campaign Monitor is an email marketing software for designers and their clients. Use Gravity Forms to collect customer information and automatically add them to your client\'s Campaign Monitor subscription list. If you don\'t have a Campaign Monitor account, you can  %1$ssign up for one here%2$s', 'gravityformscampaignmonitor' ),
-					'<a href="http://www.campaignmonitor.com" target="_blank">', '</a>.' ),
-				'fields'      => array(
-					array(
-						'name'              => 'apiKey',
-						'label'             => esc_html__( 'API Key', 'gravityformscampaignmonitor' ),
-						'type'              => 'api_key',
-						'class'             => 'medium',
-						'feedback_callback' => array( $this, 'is_valid_api_key' )
-
-					),
-					array(
-						'name'              => 'apiClientId',
-						'label'             => esc_html__( 'Client API Key', 'gravityformscampaignmonitor' ),
-						'type'              => 'api_client_id',
-						'class'             => 'medium',
-						'feedback_callback' => array( $this, 'is_valid_client_id' )
-					),
-				)
-			),
-		);
-
-	}
-
-	/**
-	 * Define the markup for the api_key type field.
-	 *
-	 * @param array $field The field properties.
-	 * @param bool|true $echo Should the setting markup be echoed.
-	 *
-	 * @return string
-	 */
-	public function settings_api_key( $field, $echo = true ) {
-
-		$field['type'] = 'text';
-
-		$api_key_field = $this->settings_text( $field, false );
-
-		//switch type="text" to type="password" so the key is not visible
-		$api_key_field = str_replace( 'type="text"', 'type="password"', $api_key_field );
-
-		$caption = '<small>' . sprintf( esc_html__( "You can find your unique API key by clicking on the 'Account Settings' link at the top of your Campaign Monitor screen.", 'gravityformscampaignmonitor' ) ) . '</small>';
-
-		if ( $echo ) {
-			echo $api_key_field . '</br>' . $caption;
+		// If API is alredy initialized and license key is not provided, return true.
+		if ( ! is_null( $this->api ) ) {
+			return true;
 		}
 
-		return $api_key_field . '</br>' . $caption;
-
-	}
-
-	/**
-	 * Define the markup for the api_client_id type field.
-	 *
-	 * @param array $field The field properties.
-	 * @param bool|true $echo Should the setting markup be echoed.
-	 *
-	 * @return string
-	 */
-	public function settings_api_client_id( $field, $echo = true ) {
-
-		$field['type'] = 'text';
-
-		$api_client_id = $this->settings_text( $field, false );
-
-		$caption = '<small>' . sprintf( esc_html__( '(Optional) Enter an API Client ID to limit this Add-On to the specified client.', 'gravityformscampaignmonitor' ) ) . '</small>';
-
-		if ( $echo ) {
-			echo $api_client_id . '</br>' . $caption;
+		// Load the API library.
+		if ( ! class_exists( 'GF_CampaignMonitor_API' ) ) {
+			require_once( 'includes/class-gf-campaignmonitor-api.php' );
 		}
 
-		return $api_client_id . '</br>' . $caption;
+		// Get the plugin settings.
+		$settings = $this->get_plugin_settings();
 
-	}
-
-	// ------- Feed list page -------
-
-	/**
-	 * Prevent feeds being listed or created if the api key or client id aren't valid.
-	 *
-	 * @return bool
-	 */
-	public function can_create_feed() {
-
-		if ( ! $this->get_client_id() ) {
-
-			return $this->is_valid_api_key();
+		// If the API key is empty, do not run a validation check.
+		if ( ! rgar( $settings, 'apiKey' ) ) {
+			return null;
 		}
 
-		return $this->is_valid_api_key() && $this->is_valid_client_id();
-	}
+		// Log validation step.
+		$this->log_debug( __METHOD__ . '(): Validating API Info.' );
 
-	/**
-	 * If the api key is invalid or empty return the appropriate message.
-	 *
-	 * @return string
-	 */
-	public function configure_addon_message() {
+		// Setup a new Fillable PDFs API object with the API credentials.
+		$api = new GF_CampaignMonitor_API( $settings['apiKey'] );
 
-		$settings_label = sprintf( esc_html__( '%s Settings', 'gravityforms' ), $this->get_short_title() );
-		$settings_link  = sprintf( '<a href="%s">%s</a>', esc_url( $this->get_plugin_settings_url() ), $settings_label );
+		try {
 
-		if ( ! $this->get_api_key() ) {
+			// Get system date.
+			$api->auth_test();
 
-			return sprintf( esc_html__( 'To get started, please configure your %s.', 'gravityforms' ), $settings_link );
-		}
+			// Assign API library to instance.
+			$this->api = $api;
 
-		return sprintf( esc_html__( 'We are unable to login to Campaign Monitor with the provided API key or API Client ID. Please make sure you have entered valid API details on the %s page.', 'gravityformscampaignmonitor' ), $settings_link );
+			// Log that authentication test passed.
+			$this->log_debug( __METHOD__ . '(): API credentials are valid.' );
 
-	}
+			return true;
 
-	/**
-	 * Display a warning message instead of the feeds if the AWeber auth code isn't valid.
-	 *
-	 * @param array $form The form currently being edited.
-	 * @param integer $feed_id The current feed ID.
-	 */
-	public function feed_edit_page( $form, $feed_id ) {
+		} catch ( \Exception $e ) {
 
-		// ensures valid credentials were entered in the settings page
-		if ( ! $this->can_create_feed() ) {
+			// Log that authentication test failed.
+			$this->log_error( __METHOD__ . '(): API credentials are invalid; '. $e->getMessage() );
 
-			echo '<h3><span>' . $this->feed_settings_title() . '</span></h3>';
-			echo '<div>' . $this->configure_addon_message() . '</div>';
-
-			return;
-		}
-
-		echo '<script type="text/javascript">var form = ' . GFCommon::json_encode( $form ) . ';</script>';
-
-		parent::feed_edit_page( $form, $feed_id );
-	}
-
-	/**
-	 * Configures which columns should be displayed on the feed list page.
-	 *
-	 * @return array
-	 */
-	public function feed_list_columns() {
-		return array(
-			'feedName'    => esc_html__( 'Name', 'gravityformscampaignmonitor' ),
-			'client'      => esc_html__( 'Campaign Monitor Client', 'gravityformscampaignmonitor' ),
-			'contactList' => esc_html__( 'Campaign Monitor List', 'gravityformscampaignmonitor' )
-		);
-	}
-
-	/**
-	 * Returns the value to be displayed in the client column.
-	 *
-	 * @param array $feed The feed being included in the feed list.
-	 *
-	 * @return string
-	 */
-	public function get_column_value_client( $feed ) {
-		return $this->get_client_name( $feed['meta']['client'] );
-	}
-
-	/**
-	 * Returns the value to be displayed in the contactList column.
-	 *
-	 * @param array $feed The feed being included in the feed list.
-	 *
-	 * @return string
-	 */
-	public function get_column_value_contactList( $feed ) {
-		return $this->get_list_name( $feed['meta']['client'], $feed['meta']['contactList'] );
-	}
-
-	/**
-	 * Return the name of the specified client.
-	 *
-	 * @param string $client_id The client ID.
-	 *
-	 * @return string
-	 */
-	private function get_client_name( $client_id ) {
-		global $_clients;
-
-		$campaignmonitor_clients = $this->get_clients();
-
-		if ( ! isset( $_clients ) ) {
-
-			$_clients = $campaignmonitor_clients;
+			return false;
 
 		}
 
-		$client_name_array = wp_filter_object_list( $_clients, array( 'ClientID' => $client_id ), 'and', 'Name' );
-		if ( $client_name_array ) {
-			$client_names = array_values( $client_name_array );
-			$client_name  = $client_names[0];
-		} else {
-			$client_name = $client_id . ' (' . esc_html__( 'List not found in Campaign Monitor', 'gravityformscampaignmonitor' ) . ')';
-		}
-
-		return $client_name;
-
 	}
 
 	/**
-	 * Return the name of the specified list.
+	 * Get default Campaign Monitor client ID.
 	 *
-	 * @param string $client_id The client ID.
-	 * @param string $list_id The list ID.
+	 * @since  3.5
+	 * @access public
 	 *
-	 * @return string
+	 * @uses GFAddOn::log_error()
+	 * @uses GFCampaignMonitor::initialize_api()
+	 * @uses GF_CampaignMonitor_API::get_clients()
+	 *
+	 * @return bool|array|string
 	 */
-	private function get_list_name( $client_id, $list_id ) {
-		global $_lists;
+	public function get_default_client( $return_id = true ) {
 
-		if ( ! isset( $_lists ) ) {
-
-			$this->include_api();
-			$api      = new CS_REST_Clients( $client_id, $this->get_key() );
-			$response = $api->get_lists();
-			$_lists   = $response->response;
-		}
-
-		$list_name_array = wp_filter_object_list( $_lists, array( 'ListID' => $list_id ), 'and', 'Name' );
-		if ( $list_name_array ) {
-			$list_names = array_values( $list_name_array );
-			$list_name  = $list_names[0];
-		} else {
-			$list_name = $list_id . ' (' . esc_html__( 'List not found in Campaign Monitor', 'gravityformscampaignmonitor' ) . ')';
-		}
-
-		return $list_name;
-	}
-
-	/**
-	 * Configures the settings which should be rendered on the feed edit page.
-	 *
-	 * @return array The feed settings.
-	 */
-	public function feed_settings_fields() {
-		return array(
-			array(
-				'title'       => esc_html__( 'Campaign Monitor Feed', 'gravityformscampaignmonitor' ),
-				'description' => '',
-				'fields'      => array(
-					array(
-						'name'     => 'feedName',
-						'label'    => esc_html__( 'Name', 'gravityformscampaignmonitor' ),
-						'type'     => 'text',
-						'required' => true,
-						'class'    => 'medium',
-						'tooltip'  => '<h6>' . esc_html__( 'Name', 'gravityformscampaignmonitor' ) . '</h6>' . esc_html__( 'Enter a feed name to uniquely identify this setup.', 'gravityformscampaignmonitor' ),
-					),
-					array(
-						'name'     => 'client',
-						'label'    => esc_html__( 'Client', 'gravityformscampaignmonitor' ),
-						'type'     => 'select',
-						'onchange' => 'jQuery(this).parents("form").submit();',
-						'hidden'   => $this->is_clients_hidden(),
-						'choices'  => $this->get_campaignmonitor_clients(),
-						'tooltip'  => '<h6>' . esc_html__( 'Client', 'gravityformscampaignmonitor' ) . '</h6>' . esc_html__( 'Select the Campaign Monitor client you would like to add your contacts to.', 'gravityformscampaignmonitor' ),
-					),
-					array(
-						'name'       => 'contactList',
-						'label'      => esc_html__( 'Contact List', 'gravityformscampaignmonitor' ),
-						'type'       => 'contact_list',
-						'onchange'   => 'jQuery(this).parents("form").submit();',
-						'dependency' => array( $this, 'has_selected_client' ),
-						'tooltip'    => '<h6>' . esc_html__( 'Contact List', 'gravityformscampaignmonitor' ) . '</h6>' . esc_html__( 'Select the Campaign Monitor list you would like to add your contacts to.', 'gravityformscampaignmonitor' ),
-					),
-					array(
-						'name'       => 'listFields',
-						'label'      => esc_html__( 'Map Fields', 'gravityformscampaignmonitor' ),
-						'type'       => 'field_map',
-						'dependency' => 'contactList',
-						'field_map'  => $this->create_list_field_map(),
-						'tooltip'    => '<h6>' . esc_html__( 'Map Fields', 'gravityformscampaignmonitor' ) . '</h6>' . esc_html__( 'Associate your Campaign Monitor custom fields to the appropriate Gravity Form fields by selecting the appropriate form field from the list.', 'gravityformscampaignmonitor' ),
-					),
-					array(
-						'name'       => 'optin',
-						'label'      => esc_html__( 'Conditional Logic', 'gravityformscampaignmonitor' ),
-						'type'       => 'feed_condition',
-						'dependency' => 'contactList',
-						'tooltip'    => '<h6>' . esc_html__( 'Conditional Logic', 'gravityformscampaignmonitor' ) . '</h6>' . esc_html__( 'When conditional logic is enabled, form submissions will only be exported to Campaign Monitor when the condition is met. When disabled all form submissions will be exported.', 'gravityformscampaignmonitor' ),
-					),
-					array(
-						'name'       => 'resubscribe',
-						'label'      => esc_html__( 'Options', 'gravityformscampaignmonitor' ),
-						'type'       => 'option_resubscribe',
-						'dependency' => 'contactList',
-						'onclick'    => "if(this.checked){jQuery('#campaignmonitor_resubscribe_warning').slideDown();} else{jQuery('#campaignmonitor_resubscribe_warning').slideUp();}",
-					),
-				)
-			),
-		);
-	}
-
-	/**
-	 * Check if the clients setting should be displayed.
-	 *
-	 * @return bool
-	 */
-	public function is_clients_hidden() {
-		if ( $this->has_multiple_clients() ) {
+		// If API cannot be initialized, return false.
+		if ( ! $this->initialize_api() ) {
 			return false;
 		}
 
-		return true;
-	}
+		try {
 
-	/**
-	 * If there are multiple clients return an array of choices for the clients setting.
-	 *
-	 * @return array|void
-	 */
-	public function get_campaignmonitor_clients() {
+			// Get clients.
+			$clients = $this->api->get_clients();
 
-		$campaignmonitor_clients = $this->get_clients();
+			// Get default client.
+			$client = array_shift( $clients );
 
-		if ( ! $campaignmonitor_clients ) {
-			return;
-		}
+			return $return_id ? $client['ClientID'] : $client;
 
-		if ( $this->has_multiple_clients() ) {
-			$clients_dropdown[] = array(
-				'label' => 'Select Client',
-				'value' => '',
-			);
+		} catch ( \Exception $e ) {
+
+			// Log that we could not retrieve the clients.
+			$this->log_error( __METHOD__ . '(): Unable to retrieve clients; ' . $e->getMessage() );
+
+			return false;
 
 		}
-
-		foreach ( $campaignmonitor_clients as $client ) {
-
-			$clients_dropdown[] = array(
-				'label' => $client->Name,
-				'value' => $client->ClientID,
-			);
-
-		}
-
-		return $clients_dropdown;
 
 	}
 
 	/**
-	 * Define the markup for the contact_list type field.
+	 * Get available Campaign Monitor clients as choices.
 	 *
-	 * @param array $field The field properties.
-	 * @param bool|true $echo Should the setting markup be echoed.
+	 * @since  3.5
+	 * @access public
 	 *
-	 * @return string|void
-	 */
-	public function settings_contact_list( $field, $echo = true ) {
-
-		$client_id = $this->get_setting( 'client' );
-		if ( empty( $client_id ) ) {
-			$clients = $this->get_clients();
-			if ( ! empty( $clients ) ) {
-				$client_id = $clients[0]->ClientID;
-			}
-		}
-
-		if ( ! empty( $client_id ) ) {
-			$this->include_api();
-			$api = new CS_REST_Clients( $client_id, $this->get_key() );
-
-			$response = $api->get_lists();
-
-			if ( ! $response->was_successful() ) {
-				return;
-			}
-
-			$lists[] = array(
-				'label' => 'Select List',
-				'value' => '',
-			);
-
-			$retrieved_lists = $response->response;
-
-			foreach ( $retrieved_lists as $list ) {
-
-				$lists[] = array(
-					'label' => $list->Name,
-					'value' => $list->ListID,
-				);
-
-			}
-
-			$field['type']    = 'select';
-			$field['choices'] = $lists;
-
-			$html = $this->settings_select( $field, false );
-		} else {
-			$html = '<div class="gfield_error" style="width:49%">' .
-			        sprintf( esc_html__( 'No clients found. Please configure one or more clients in your %sCampaign Monitor%s account.', 'gravityformscampaignmonitor' ), '<a href="http://www.campaignmonitor.com" target="_blank">', '</a>' ) .
-			        '</div>';
-		}
-
-		if ( $echo ) {
-			echo $html;
-		}
-
-		return $html;
-
-	}
-
-	/**
-	 * Return an array of Campaign Monitor fields which can be mapped to the Form fields/entry meta.
+	 * @uses GFAddOn::log_error()
+	 * @uses GFCampaignMonitor::initialize_api()
+	 * @uses GF_CampaignMonitor_API::get_clients()
 	 *
 	 * @return array
 	 */
-	public function create_list_field_map() {
+	public function get_clients_as_choices() {
 
-		$list_id       = $this->get_setting( 'contactList' );
-		$custom_fields = $this->get_custom_fields( $list_id );
-
-		return $custom_fields;
-
-	}
-
-	/**
-	 * Define the markup for the option_resubscribe type field.
-	 *
-	 * @param array $field The field properties.
-	 * @param bool|true $echo Should the setting markup be echoed.
-	 *
-	 * @return string|void
-	 */
-	public function settings_option_resubscribe( $field, $echo = true ) {
-
-		$field['type'] = 'checkbox';
-
-		$options          = array(
-			array(
-				'label' => esc_html__( 'Resubscribe', 'gravityformscampaignmonitor' ),
-				'name'  => 'resubscribe',
-			),
-		);
-		$field['choices'] = $options;
-		$html             = $this->settings_checkbox( $field, false );
-
-		$tooltip_content = '<h6>' . esc_html__( 'Resubscribe', 'gravityformscampaignmonitor' ) . '</h6>' . esc_html__( 'When this option is enabled, if the subscriber is in an inactive state or has previously been unsubscribed, they will be re-added to the active list. Therefore, this option should be used with caution and only when appropriate.', 'gravityformscampaignmonitor' );
-		$tooltip         = gform_tooltip( $tooltip_content, '', true );
-
-		$html = str_replace( '</div>', $tooltip . '</div>', $html );
-
-		$resubscribe_warning_style = $this->get_setting( 'resubscribe' ) ? '' : 'display:none';
-		$html .= '<small><span id="campaignmonitor_resubscribe_warning" style="' . $resubscribe_warning_style . '">' . esc_html__( 'This option will re-subscribe users that have been unsubscribed. Use with caution and only when appropriate.', 'gravityformscampaignmonitor' ) . '</span></small>';
-
-		if ( $echo ) {
-			echo $html;
+		// If API cannot be initialized, return array.
+		if ( ! $this->initialize_api() ) {
+			return array();
 		}
 
-		return $html;
+		// Initialize choices array.
+		$choices = array(
+			array(
+				'label' => esc_html__( 'Select a Client', 'gravityformscampaignmonitor' ),
+				'value' => '',
+			)
+		);
+
+		try {
+
+			// Get clients.
+			$clients = $this->api->get_clients();
+
+		} catch ( \Exception $e ) {
+
+			// Log that we could not retrieve the clients.
+			$this->log_error( __METHOD__ . '(): Unable to retrieve clients; ' . $e->getMessage() );
+
+			return array();
+
+		}
+
+		// If no clients were found, return.
+		if ( empty( $clients ) ) {
+			return array();
+		}
+
+		// Loop through array.
+		foreach ( $clients as $client ) {
+
+			// Add client as choice.
+			$choices[] = array(
+				'label' => esc_html( $client['Name'] ),
+				'value' => esc_attr( $client['ClientID'] ),
+			);
+
+		}
+
+		return $choices;
 
 	}
 
+	/**
+	 * Get available Campaign Monitor lists as choices.
+	 *
+	 * @since  3.5
+	 * @access public
+	 *
+	 * @param string $client_ID Client to get lists from.
+	 *
+	 * @uses GFAddOn::log_error()
+	 * @uses GFAddOn::get_plugin_settings()
+	 * @uses GFAddOn::get_setting()
+	 * @uses GFCampaignMonitor::initialize_api()
+	 * @uses GF_CampaignMonitor_API::get_lists()
+	 * @uses GF_CampaignMonitor_API::set_client_id()
+	 *
+	 * @return array
+	 */
+	public function get_lists_as_choices( $client_id = null ) {
 
-	// # HELPERS -------------------------------------------------------------------------------------------------------
+		// If API cannot be initialized, return array.
+		if ( ! $this->initialize_api() ) {
+			return array();
+		}
+
+		// Initialize choices array.
+		$choices = array(
+			array(
+				'label' => esc_html__( 'Select a List', 'gravityformscampaignmonitor' ),
+				'value' => '',
+			)
+		);
+
+		// Get client ID.
+		if ( empty( $client_id ) ) {
+
+			// If a client has been selected, use it.
+			if ( $this->get_setting( 'client' ) ) {
+
+				$client_id = $this->get_setting( 'client' );
+
+			} else {
+
+				// Use default client ID.
+				$client_id = $this->get_default_client();
+
+			}
+
+		}
+
+		try {
+
+			// Set client ID.
+			$this->api->set_client_id( $client_id );
+
+			// Get lists.
+			$lists = $this->api->get_lists();
+
+		} catch ( \Exception $e ) {
+
+			// Log that we could not retrieve the lists.
+			$this->log_error( __METHOD__ . '(): Unable to retrieve lists; ' . $e->getMessage() );
+
+			return array();
+
+		}
+
+		// If no lists were found, return.
+		if ( empty( $lists ) ) {
+			return array();
+		}
+
+		// Loop through array.
+		foreach ( $lists as $list ) {
+
+			// Add list as choice.
+			$choices[] = array(
+				'label' => esc_html( $list['Name'] ),
+				'value' => esc_attr( $list['ListID'] ),
+			);
+
+		}
+
+		return $choices;
+
+	}
 
 	/**
-	 * Do multiple clients exist?
+	 * Check if multiple Campaign Monitor clients exist for API key.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @uses GFAddOn::log_error()
+	 * @uses GFCampaignMonitor::initialize_api()
+	 * @uses GF_CampaignMonitor_API::get_clients()
 	 *
 	 * @return bool
 	 */
 	public function has_multiple_clients() {
 
-		$clients = $this->get_clients();
-		if ( ! $clients || count( $clients ) == 1 ) {
+		// If API cannot be initialized, return false.
+		if ( ! $this->initialize_api() ) {
 			return false;
 		}
 
-		return true;
+		try {
+
+			// Get clients.
+			$clients = $this->api->get_clients();
+
+			return count( $clients ) > 1;
+
+		} catch ( \Exception $e ) {
+
+			// Log that we could not retrieve clients.
+			$this->log_error( __METHOD__ . '(): Unable to retrieve clients; ' . $e->getMessage() );
+
+			return false;
+
+		}
+
 	}
 
 	/**
 	 * Has a choice been selected for the client setting?
 	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @uses GFAddOn::get_setting()
+	 * @uses GFCampaignMonitor::has_multiple_clients()
+	 *
 	 * @return bool
 	 */
 	public function has_selected_client() {
 
+		// If multiple clients exist, check if client has been selected.
 		if ( $this->has_multiple_clients() ) {
+
+			// Get selected client.
 			$selected_client = $this->get_setting( 'client' );
 
 			return ! empty( $selected_client );
+
 		}
 
 		return true;
-	}
-
-	/**
-	 * Return the clients.
-	 *
-	 * @return mixed
-	 */
-	private function get_clients() {
-
-		$clients = GFCache::get( 'campaignmonitor_clients' );
-		if ( ! $clients ) {
-
-			$this->include_api();
-			$api = new CS_REST_General( $this->get_key() );
-
-			//getting all clients
-			$response = $api->get_clients();
-			if ( $response->http_status_code == 200 ) {
-				$clients = $response->response;
-				GFCache::set( 'campaignmonitor_clients', $clients );
-			}
-		}
-
-		return $clients;
-
-	}
-
-	/**
-	 * Return an array of Campaign Monitor fields for the specified list.
-	 *
-	 * @param string $list_id The list ID.
-	 *
-	 * @return array
-	 */
-	public function get_custom_fields( $list_id ) {
-
-		$this->include_api();
-		$api = new CS_REST_Lists( $list_id, $this->get_key() );
-
-		$custom_fields = array(
-			array(
-				'label'    => esc_html__( 'Email Address', 'gravityformscampaignmonitor' ),
-				'name'     => 'email',
-				'required' => true
-			),
-			array( 'label' => esc_html__( 'Full Name', 'gravityformscampaignmonitor' ), 'name' => 'fullname' ),
-		);
-
-		$response = $api->get_custom_fields();
-		if ( ! $response->was_successful() ) {
-			return $custom_fields;
-		}
-
-		$custom_field_objects = $response->response;
-
-		foreach ( $custom_field_objects as $custom_field ) {
-			$name            = str_replace( '[', '', $custom_field->Key );
-			$name            = str_replace( ']', '', $name );
-			$custom_fields[] = array( 'label' => $custom_field->FieldName, 'name' => $name );
-		}
-
-		return $custom_fields;
-
-	}
-
-	/**
-	 * Validate the key.
-	 *
-	 * @return bool|null
-	 */
-	public function is_valid_key( $key ) {
-		if ( empty( $key ) ) {
-			return null;
-		}
-		$this->include_api();
-		$api    = new CS_REST_General( $key );
-		$result = $api->get_systemdate();
-
-		return $result->was_successful();
-	}
-
-	/**
-	 * Validate the API key.
-	 *
-	 * @return bool|null
-	 */
-	public function is_valid_api_key() {
-		return $this->is_valid_key( $this->get_api_key() );
-	}
-
-	/**
-	 * Validate the client id.
-	 *
-	 * @return bool|null
-	 */
-	public function is_valid_client_id() {
-		return $this->is_valid_key( $this->get_client_id() );
-	}
-
-	/**
-	 * Get the API key or client ID if available.
-	 *
-	 * @return string
-	 */
-	public function get_key() {
-		$settings  = $this->get_plugin_settings();
-		$api_key   = $settings['apiKey'];
-		$client_id = $settings['apiClientId'];
-
-		return empty( $client_id ) ? $api_key : $client_id;
-	}
-
-	/**
-	 * Get the API key from the settings.
-	 *
-	 * @return string
-	 */
-	public function get_api_key() {
-
-		$settings = $this->get_plugin_settings();
-		$api_key  = $settings['apiKey'];
-
-		return $api_key;
-	}
-
-	/**
-	 * Get the client ID from the settings.
-	 *
-	 * @return string
-	 */
-	public function get_client_id() {
-		$settings  = $this->get_plugin_settings();
-		$client_id = $settings['apiClientId'];
-
-		return $client_id;
-	}
-
-	/**
-	 * Include the Campaign Monitor API.
-	 */
-	public function include_api() {
-
-		if ( ! class_exists( 'CS_REST_Clients' ) ) {
-			require_once $this->get_base_path() . '/api/csrest_clients.php';
-		}
-
-		if ( ! class_exists( 'CS_REST_General' ) ) {
-			require_once $this->get_base_path() . '/api/csrest_general.php';
-		}
-
-		if ( ! class_exists( 'CS_REST_Lists' ) ) {
-			require_once $this->get_base_path() . '/api/csrest_lists.php';
-		}
-
-		if ( ! class_exists( 'CS_REST_Subscribers' ) ) {
-			require_once $this->get_base_path() . '/api/csrest_subscribers.php';
-		}
 
 	}
 
 
-	// # TO FRAMEWORK MIGRATION ----------------------------------------------------------------------------------------
 
-	/**
-	 * Initialize the admin specific hooks.
-	 */
-	public function init_admin() {
-		parent::init_admin();
-		add_filter( 'gform_addon_navigation', array( $this, 'maybe_create_menu' ) );
-	}
 
-	/**
-	 * Maybe add the temporary plugin page to the menu.
-	 *
-	 * @param array $menus
-	 *
-	 * @return array
-	 */
-	public function maybe_create_menu( $menus ) {
-		$current_user                 = wp_get_current_user();
-		$dismiss_campaignmonitor_menu = get_metadata( 'user', $current_user->ID, 'dismiss_campaignmonitor_menu', true );
-		if ( $dismiss_campaignmonitor_menu != '1' ) {
-			$menus[] = array(
-				'name'       => $this->_slug,
-				'label'      => $this->get_short_title(),
-				'callback'   => array( $this, 'temporary_plugin_page' ),
-				'permission' => $this->_capabilities_form_settings
-			);
-		}
 
-		return $menus;
-	}
-
-	/**
-	 * Initialize the AJAX hooks.
-	 */
-	public function init_ajax() {
-		parent::init_ajax();
-		add_action( 'wp_ajax_gf_dismiss_campaignmonitor_menu', array( $this, 'ajax_dismiss_menu' ) );
-	}
-
-	/**
-	 * Update the user meta to indicate they shouldn't see the temporary plugin page again.
-	 */
-	public function ajax_dismiss_menu() {
-
-		$current_user = wp_get_current_user();
-		update_metadata( 'user', $current_user->ID, 'dismiss_campaignmonitor_menu', '1' );
-	}
-
-	/**
-	 * Display a temporary page explaining how feeds are now managed.
-	 */
-	public function temporary_plugin_page() {
-		$current_user = wp_get_current_user();
-		?>
-		<script type="text/javascript">
-			function dismissMenu() {
-				jQuery('#gf_spinner').show();
-				jQuery.post(ajaxurl, {
-						action: "gf_dismiss_campaignmonitor_menu"
-					},
-					function (response) {
-						document.location.href = '?page=gf_edit_forms';
-						jQuery('#gf_spinner').hide();
-					}
-				);
-
-			}
-		</script>
-
-		<div class="wrap about-wrap">
-			<h1><?php esc_html_e( 'Campaign Monitor Add-On v3.0', 'gravityformscampaignmonitor' ) ?></h1>
-
-			<div class="about-text"><?php esc_html_e( 'Thank you for updating! The new version of the Gravity Forms Campaign Monitor Add-On makes changes to how you manage your Campaign Monitor integration.', 'gravityformscampaignmonitor' ) ?></div>
-			<div class="changelog">
-				<hr/>
-				<div class="feature-section col two-col">
-					<div class="col-1">
-						<h3><?php esc_html_e( 'Manage Campaign Monitor Contextually', 'gravityformscampaignmonitor' ) ?></h3>
-
-						<p><?php esc_html_e( 'Campaign Monitor Feeds are now accessed via the Campaign Monitor sub-menu within the Form Settings for the Form with which you would like to integrate Campaign Monitor.', 'gravityformscampaignmonitor' ) ?></p>
-					</div>
-					<div class="col-2 last-feature">
-						<img src="http://gravityforms.s3.amazonaws.com/webimages/AddonNotice/NewCampaignMonitor3.png">
-					</div>
-				</div>
-
-				<hr/>
-
-				<form method="post" id="dismiss_menu_form" style="margin-top: 20px;">
-					<input type="checkbox" name="dismiss_campaignmonitor_menu" value="1" onclick="dismissMenu();">
-					<label><?php esc_html_e( 'I understand this change, dismiss this message!', 'gravityformscampaignmonitor' ) ?></label>
-					<img id="gf_spinner" src="<?php echo GFCommon::get_base_url() . '/images/spinner.gif' ?>" alt="<?php esc_attr_e( 'Please wait...', 'gravityformscampaignmonitor' ) ?>" style="display:none;"/>
-				</form>
-
-			</div>
-		</div>
-		<?php
-	}
+	// # UPGRADE ROUTINES ----------------------------------------------------------------------------------------------
 
 	/**
 	 * Checks if a previous version was installed and if the feeds need migrating to the framework structure.
 	 *
+	 * @since  3.0
+	 * @access public
+	 *
 	 * @param string $previous_version The version number of the previously installed version.
+	 *
+	 * @uses GFAddOn::get_plugin_settings()
+	 * @uses GFAddOn::update_plugin_settings()
+	 * @uses GFCampaignMonitor::copy_feeds()
+	 * @uses GFCampaignMonitor::update_paypal_delay_settings()
 	 */
 	public function upgrade( $previous_version ) {
+
+		// Get previous version from pre Add-On Framework.
 		if ( empty( $previous_version ) ) {
 			$previous_version = get_option( 'gf_campaignmonitor_version' );
 		}
+
+		// Check if previous version is from before the Add-On Framework.
 		$previous_is_pre_addon_framework = ! empty( $previous_version ) && version_compare( $previous_version, '3.0.dev1', '<' );
 
+		// Migrate feeds to Add-On Framework.
 		if ( $previous_is_pre_addon_framework ) {
 
 			$this->copy_feeds();
@@ -1030,32 +1231,63 @@ class GFCampaignMonitor extends GFFeedAddOn {
 				'apiClientId' => $old_settings['client_id'],
 			);
 
-			parent::update_plugin_settings( $new_settings );
+			$this->update_plugin_settings( $new_settings );
 
 			//set paypal delay setting
 			$this->update_paypal_delay_settings( 'delay_campaignmonitor_subscription' );
 
 		}
 
+		// Check if previous version is from before the API rewrite.
+		$previous_is_pre_api_rewrite = ! empty( $previous_version ) && version_compare( $previous_version, '3.5', '<' );
+
+		// Migrate client API key plugin setting.
+		if ( $previous_is_pre_api_rewrite ) {
+
+			// Get plugin settings.
+			$settings = $this->get_plugin_settings();
+
+			// Migrate client API key to API key field.
+			$settings['apiKey'] = $settings['apiClientId'];
+
+			// Save settings.
+			$this->update_plugin_settings( $settings );
+
+		}
+
 	}
 
 	/**
-	 * Migrate the feeds.
+	 * Migrate feeds to the Feed Add-On Framework.
+	 *
+	 * @since  3.0
+	 * @access public
+	 *
+	 * @use GFCampaignMonitor::get_old_feeds()
+	 * @use GFFeedAddOn::insert_feed()
 	 */
 	public function copy_feeds() {
 
+		// Get old Campaign Monitor feeds.
 		$old_feeds = $this->get_old_feeds();
 
+		// If no feeds were found, exit.
 		if ( ! $old_feeds ) {
 			return;
 		}
 
+		// Initialize feed counter.
 		$counter = 1;
+
+		// Loop through old feeds.
 		foreach ( $old_feeds as $old_feed ) {
+
+			// Set feed name, form ID, active state.
 			$feed_name = 'Feed ' . $counter;
 			$form_id   = $old_feed['form_id'];
 			$is_active = $old_feed['is_active'];
 
+			// Prepare new feed meta.
 			$new_meta = array(
 				'feedName'    => $feed_name,
 				'client'      => rgar( $old_feed['meta'], 'client_id' ),
@@ -1063,12 +1295,17 @@ class GFCampaignMonitor extends GFFeedAddOn {
 				'resubscribe' => rgar( $old_feed['meta'], 'resubscribe' ),
 			);
 
+			// Migrate field mapping.
 			foreach ( $old_feed['meta']['field_map'] as $var_tag => $field_id ) {
 				$new_meta[ 'listFields_' . $var_tag ] = $field_id;
 			}
 
+			// Get opt-in state.
 			$optin_enabled = rgar( $old_feed['meta'], 'optin_enabled' );
+
+			// Migrate opt-in settings.
 			if ( $optin_enabled ) {
+
 				$new_meta['feed_condition_conditional_logic']        = 1;
 				$new_meta['feed_condition_conditional_logic_object'] = array(
 					'conditionalLogic' => array(
@@ -1083,118 +1320,202 @@ class GFCampaignMonitor extends GFFeedAddOn {
 						)
 					)
 				);
+
 			} else {
+
 				$new_meta['feed_condition_conditional_logic'] = 0;
+
 			}
 
+			// Save new feed.
 			$this->insert_feed( $form_id, $is_active, $new_meta );
-			$counter ++;
+
+			$counter++;
+
 		}
+
 	}
 
 	/**
-	 * Migrate the delayed payment setting for the PayPal add-on integration.
+	 * Migrate the delayed payment setting for the PayPal Add-On integration.
 	 *
-	 * @param $old_delay_setting_name
+	 * @since  3.0
+	 * @access public
+	 *
+	 * @param string $old_delay_setting_name
+	 *
+	 * @uses GFAddOn::log_debug()
+	 * @uses GFFeedAddOn::get_feeds_by_slug()
+	 * @uses GFFeedAddOn::update_feed_meta()
+	 * @uses wpdb::update()
 	 */
 	public function update_paypal_delay_settings( $old_delay_setting_name ) {
+
 		global $wpdb;
+
+		// Log that we are beginning migration.
 		$this->log_debug( __METHOD__ . '(): Checking to see if there are any delay settings that need to be migrated for PayPal Standard.' );
 
+		// Get new delay setting name.
 		$new_delay_setting_name = 'delay_' . $this->_slug;
 
-		//get paypal feeds from old table
+		// Get paypal feeds from old table.
 		$paypal_feeds_old = $this->get_old_paypal_feeds();
 
-		//loop through feeds and look for delay setting and create duplicate with new delay setting for the framework version of PayPal Standard
+		// Loop through feeds, look for delay setting and create duplicate with new delay setting for the framework version of PayPal Standard.
 		if ( ! empty( $paypal_feeds_old ) ) {
+
+			// Log that we are migrating delay settings.
 			$this->log_debug( __METHOD__ . '(): Old feeds found for ' . $this->_slug . ' - copying over delay settings.' );
+
+			// Loop through PayPal feeds.
 			foreach ( $paypal_feeds_old as $old_feed ) {
+
+				// Get feed meta.
 				$meta = $old_feed['meta'];
-				if ( ! rgempty( $old_delay_setting_name, $meta ) ) {
-					$meta[ $new_delay_setting_name ] = $meta[ $old_delay_setting_name ];
-					//update paypal meta to have new setting
-					$meta = maybe_serialize( $meta );
-					$wpdb->update( "{$wpdb->prefix}rg_paypal", array( 'meta' => $meta ), array( 'id' => $old_feed['id'] ), array( '%s' ), array( '%d' ) );
+
+				// If feed was not delayed, skip it.
+				if ( rgempty( $old_delay_setting_name, $meta ) ) {
+					continue;
 				}
+
+				$meta[ $new_delay_setting_name ] = $meta[ $old_delay_setting_name ];
+				$meta                            = maybe_serialize( $meta );
+
+				$wpdb->update( "{$wpdb->prefix}rg_paypal", array( 'meta' => $meta ), array( 'id' => $old_feed['id'] ), array( '%s' ), array( '%d' ) );
+
 			}
+
 		}
 
-		//get paypal feeds from new framework table
+		// Get paypal feeds from new framework table.
 		$paypal_feeds = $this->get_feeds_by_slug( 'gravityformspaypal' );
+
+		// Loop through feeds, look for delay setting and create duplicate with new delay setting for the framework version of PayPal Standard.
 		if ( ! empty( $paypal_feeds ) ) {
+
+			// Log that we are migrating delay settings.
 			$this->log_debug( __METHOD__ . '(): New feeds found for ' . $this->_slug . ' - copying over delay settings.' );
+
+			// Loop through PayPal feeds.
 			foreach ( $paypal_feeds as $feed ) {
+
+				// Get feed meta.
 				$meta = $feed['meta'];
-				if ( ! rgempty( $old_delay_setting_name, $meta ) ) {
-					$meta[ $new_delay_setting_name ] = $meta[ $old_delay_setting_name ];
-					$this->update_feed_meta( $feed['id'], $meta );
+
+				// If feed was not delayed, skip it.
+				if ( rgempty( $old_delay_setting_name, $meta ) ) {
+					continue;
 				}
+
+				$meta[ $new_delay_setting_name ] = $meta[ $old_delay_setting_name ];
+				$this->update_feed_meta( $feed['id'], $meta );
+
 			}
+
 		}
+
 	}
 
 	/**
 	 * Retrieve any old PayPal feeds.
 	 *
+	 * @since  3.0
+	 * @access public
+	 *
+	 * @uses GFAddOn::log_debug()
+	 * @uses GFAddOn::table_exists()
+	 * @uses GFFormsModel::get_form_table_name()
+	 * @uses wpdb::table_exists()
+	 *
 	 * @return bool|array
 	 */
 	public function get_old_paypal_feeds() {
+
 		global $wpdb;
+
+		// Define PayPal feeds table name.
 		$table_name = $wpdb->prefix . 'rg_paypal';
 
+		// If PayPal feeds table does not exist, exit.
 		if ( ! $this->table_exists( $table_name ) ) {
 			return false;
 		}
 
+		// Get forms table name.
 		$form_table_name = GFFormsModel::get_form_table_name();
+
+		// Prepare query.
 		$sql             = "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
 				FROM {$table_name} s
 				INNER JOIN {$form_table_name} f ON s.form_id = f.id";
 
+		// Log query.
 		$this->log_debug( __METHOD__ . "(): getting old paypal feeds: {$sql}" );
 
+		// Get results.
 		$results = $wpdb->get_results( $sql, ARRAY_A );
 
+		// Log error.
 		$this->log_debug( __METHOD__ . "(): error?: {$wpdb->last_error}" );
 
-		$count = sizeof( $results );
+		// Get feed count.
+		$count = count( $results );
 
+		// Log feed count.
 		$this->log_debug( __METHOD__ . "(): count: {$count}" );
 
+		// Unserialize feed data.
 		for ( $i = 0; $i < $count; $i ++ ) {
 			$results[ $i ]['meta'] = maybe_unserialize( $results[ $i ]['meta'] );
 		}
 
 		return $results;
+
 	}
 
 	/**
-	 * Retrieve any old feeds which need migrating to the framework,
+	 * Retrieve any old feeds which need migrating to the framework.
+	 *
+	 * @since  3.0
+	 * @access public
+	 *
+	 * @uses GFAddOn::table_exists()
+	 * @uses GFFormsModel::get_form_table_name()
+	 * @uses wpdb::table_exists()
 	 *
 	 * @return bool|array
 	 */
 	public function get_old_feeds() {
+
 		global $wpdb;
+
+		// Define Campaign Monitor feeds table name.
 		$table_name = $wpdb->prefix . 'rg_campaignmonitor';
 
+		// If Campaign Monitor feeds table does not exist, exit.
 		if ( ! $this->table_exists( $table_name ) ) {
 			return false;
 		}
 
-		$form_table_name = RGFormsModel::get_form_table_name();
+		// Get forms table name.
+		$form_table_name = GFFormsModel::get_form_table_name();
+
+		// Prepare query.
 		$sql             = "SELECT s.id, s.is_active, s.form_id, s.meta, f.title as form_title
 				FROM $table_name s
 				INNER JOIN $form_table_name f ON s.form_id = f.id";
 
+		// Get feeds.
 		$results = $wpdb->get_results( $sql, ARRAY_A );
 
-		$count = sizeof( $results );
-		for ( $i = 0; $i < $count; $i ++ ) {
+		// Unserialize feed data.
+		for ( $i = 0; $i < count( $results ); $i ++ ) {
 			$results[ $i ]['meta'] = maybe_unserialize( $results[ $i ]['meta'] );
 		}
 
 		return $results;
+
 	}
 
 }
