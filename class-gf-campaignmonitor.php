@@ -1,5 +1,10 @@
 <?php
 
+// don't load directly
+if ( ! defined( 'ABSPATH' ) ) {
+	die();
+}
+
 GFForms::include_feed_addon_framework();
 
 /**
@@ -295,7 +300,7 @@ class GFCampaignMonitor extends GFFeedAddOn {
 							'</a>'
 						),
 						'tooltip'    => sprintf(
-							'<h6>%</h6>%s',
+							'<h6>%s</h6>%s',
 							esc_html__( 'Contact List', 'gravityformscampaignmonitor' ),
 							esc_html__( 'Select the Campaign Monitor list you would like to add your contacts to.', 'gravityformscampaignmonitor' )
 						),
@@ -733,6 +738,8 @@ class GFCampaignMonitor extends GFFeedAddOn {
 		 * @param array $feed       The Feed which is currently being processed.
 		 */
 		$subscriber = gf_apply_filters( 'gform_campaignmonitor_override_subscriber', $form['id'], $subscriber, $entry, $form, $feed );
+
+		$this->log_debug( __METHOD__ . '(): Subscriber to be added => ' . print_r( $subscriber, true ) );
 
 		try {
 
