@@ -1,3 +1,14 @@
+# 3.7 | 2018-04-02
+	- Added security enhancements.
+	- Added logging statement.
+	- Added License GPL to plugin header.
+	- Updated Plugin URI and Author URI to use https.
+
+
+# 3.6 | 2018-01-05
+   - Fixed the string replacement for the Contact List tooltip
+
+
 # 3.5 | 2017-05-23
    - Fixed a fatal error which could occur with PHP 7.1 when preparing the checkbox field value.
    - Fixed a fatal error with PHP < 5.5.
