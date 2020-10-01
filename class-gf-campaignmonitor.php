@@ -42,7 +42,7 @@ class GFCampaignMonitor extends GFFeedAddOn {
 	 * @access protected
 	 * @var    string $_min_gravityforms_version The minimum version required.
 	 */
-	protected $_min_gravityforms_version = '1.9.3';
+	protected $_min_gravityforms_version = '2.3';
 
 	/**
 	 * Defines the plugin slug.
@@ -189,6 +189,19 @@ class GFCampaignMonitor extends GFFeedAddOn {
 
 	}
 
+	/**
+	 * Return the plugin's icon for the plugin/form settings menu.
+	 *
+	 * @since 3.9
+	 *
+	 * @return string
+	 */
+	public function get_menu_icon() {
+
+		return file_get_contents( $this->get_base_path() . '/images/menu-icon.svg' );
+
+	}
+
 
 
 
@@ -225,10 +238,7 @@ class GFCampaignMonitor extends GFFeedAddOn {
 						'type'              => 'text',
 						'class'             => 'medium',
 						'feedback_callback' => array( $this, 'initialize_api' ),
-						'description'       => sprintf(
-							'<small>%s</small>',
-							esc_html__( "You can find your unique API key by clicking on the 'Account Settings' link at the top of your Campaign Monitor screen. You can also enter your client API key here.", 'gravityformscampaignmonitor' )
-						),
+						'description'       => esc_html__( "To locate your API key, in your Campaign Monitor account, click on your profile image and then select 'Account settings'. On the Account settings page click 'API keys' and then click 'Show API key'. If you haven't generated one yet, click 'Generate API key' instead.", 'gravityformscampaignmonitor' ),
 					),
 				)
 			),
@@ -457,6 +467,7 @@ class GFCampaignMonitor extends GFFeedAddOn {
 		);
 
 		// Display checkbox field.
+		unset( $field['callback'] );
 		$html = $this->settings_checkbox( $field, false );
 
 		// Prepare field tooltip.
@@ -503,6 +514,21 @@ class GFCampaignMonitor extends GFFeedAddOn {
 	public function can_create_feed() {
 
 		return $this->initialize_api();
+
+	}
+
+	/**
+	 * Allow the feed to be duplicated.
+	 *
+	 * @since 3.8
+	 *
+	 * @param array|int $id The ID of the feed to be duplicated or the feed object when duplicating a form.
+	 *
+	 * @return bool
+	 */
+	public function can_duplicate_feed( $id ) {
+
+		return true;
 
 	}
 
@@ -825,7 +851,8 @@ class GFCampaignMonitor extends GFFeedAddOn {
 
 						$value = $this->maybe_override_field_value( rgar( $entry, $field_id ), $form, $entry, $field_id );
 						if ( ! empty( $value ) ) {
-							$field_value = explode( ',', $value );
+							/** @var GF_Field_MultiSelect $field */
+							$field_value = $field->to_array( $value );
 						}
 
 					} elseif ( GFCommon::is_product_field( $field->type ) && $field->enablePrice ) {
